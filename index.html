@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+
+
+    <div id="place" style="font-family: Arial, sans-serif; line-height: 1.6;"></div>
+
+    <script>
+//
+          
+
+// Step 1: Encoding and Decoding Strategy
+// We'll map numbers (1-300) to a range of ASCII characters.
+// Numbers 1-300 are represented as compact ASCII sequences using a base-94 system.
+
+const BASE = 94; // ASCII printable characters range (33-126)
+const OFFSET = 33; // ASCII starts from 33 ('!')
+
+/**
+ * Serialize an array of integers (1 to 300) into a compact string.
+ * @param {number[]} array - Array of integers to serialize.
+ * @returns {string} - Serialized string.
+ */
+
+
+ let place =document.getElementById('place')
+
+function serialize(array) {
+    let result = "";
+    let count = 1;
+
+    for (let i = 0; i < array.length; i++) {
+        const current = array[i];
+        const next = array[i + 1];
+
+        if (current === next) {
+            count++; // Count repetitions
+        } else {
+            // Encode the number and its repetition count
+            result += encodeNumber(current);
+            if (count > 1) result += encodeNumber(count);
+            count = 1; // Reset count
+        }
+    }
+    return result;
+}
+
+/**
+ * Deserialize a compact string back into the original array of integers.
+ * @param {string} str - Serialized string.
+ * @returns {number[]} - Original array of integers.
+ */
+function deserialize(str) {
+    const result = [];
+    let i = 0;
+
+    while (i < str.length) {
+        const num = decodeNumber(str[i]); // Decode the number
+        let count = 1; // Default count is 1
+
+        if (i + 1 < str.length && isEncodedCharacter(str[i + 1])) {
+            count = decodeNumber(str[i + 1]); // Decode the count if present
+            i++; // Skip the count character
+        }
+
+        result.push(...Array(count).fill(num)); // Add the number `count` times
+        i++; // Move to the next character
+    }
+
+    return result;
+}
+
+// Step 2: Helper Functions for Encoding/Decoding
+/**
+ * Encode a number into a compact ASCII character(s).
+ * @param {number} num - Number to encode.
+ * @returns {string} - Encoded character(s).
+ */
+function encodeNumber(num) {
+    let encoded = "";
+    while (num > 0) {
+        encoded = String.fromCharCode((num % BASE) + OFFSET) + encoded;
+        num = Math.floor(num / BASE);
+    }
+    return encoded;
+}
+
+/**
+ * Decode a compact ASCII character(s) back into a number.
+ * @param {string} str - Encoded character(s).
+ * @returns {number} - Decoded number.
+ */
+function decodeNumber(str) {
+    let num = 0;
+    for (let char of str) {
+        num = num * BASE + (char.charCodeAt(0) - OFFSET);
+    }
+    return num;
+}
+
+/**
+ * Check if a character is part of the encoded range.
+ * @param {string} char - Character to check.
+ * @returns {boolean} - True if it is an encoded character.
+ */
+function isEncodedCharacter(char) {
+    const code = char.charCodeAt(0);
+    return code >= OFFSET && code < OFFSET + BASE;
+}
+
+// Step 3: Test Cases
+function test() {
+    const testCases = [
+        { input: [1, 2, 3], description: "Simple case: [1, 2, 3]" },
+        { input: [45, 45, 45, 78, 78, 300], description: "Repetitions and high values" },
+        { input: Array(1000).fill(100), description: "Large array with one value" },
+        { input: [1, 2, 3, ...Array(300).fill(150)], description: "Boundary with mixed values" },
+        { input: [], description: "Empty array" },
+    ];
+    const place = document.getElementById('place');
+            place.innerHTML = ""; // Clear previous content
+
+    testCases.forEach(({ input, description }) => {
+        const serialized = serialize(input);
+        const deserialized = deserialize(serialized);
+        const originalLength = JSON.stringify(input).length;
+        const compressedLength = serialized.length;
+        const compressionRatio = (originalLength / compressedLength).toFixed(2);
+
+
+
+        const resultDiv = document.createElement("div");
+                resultDiv.innerHTML = `
+                    <strong>${description}</strong><br>
+                    Original: ${JSON.stringify(input)}<br>
+                    Serialized: ${serialized}<br>
+                    Deserialized: ${JSON.stringify(deserialized)}<br>
+                    Compression Ratio: <strong>${compressionRatio}</strong><br>
+                    <hr>
+                `;
+                place.appendChild(resultDiv);
+
+        console.log(description);
+        console.log("Original:", input);
+        console.log("Serialized:", serialized);
+        console.log("Deserialized:", deserialized);
+        console.log("Compression Ratio:", compressionRatio, "\n");
+
+        if (JSON.stringify(input) !== JSON.stringify(deserialized)) {
+            console.error("Test failed: deserialized data does not match original.");
+        }
+    });
+}
+
+// Step 4: Run Tests
+test();
+
+    </script>
+    
+</body>
+</html>
